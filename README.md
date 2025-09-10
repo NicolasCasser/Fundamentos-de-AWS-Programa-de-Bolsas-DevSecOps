@@ -14,7 +14,7 @@ A arquitetura final distribui a aplicação em múltiplas instâncias EC2, geren
 
 Esta seção descreve em detalhes o processo de construção do ambiente.
 
-### Fase 1: Configuração da Fundação de Rede (VPC)
+### Fase 1: Configuração da Rede (VPC)
 
 A rede foi configurada com uma VPC personalizada contendo sub-redes públicas e privadas em duas Zonas de Disponibilidade para garantir a resiliência.
 
