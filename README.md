@@ -129,4 +129,3 @@ chown -R ec2-user:ec2-user ${COMPOSE_DIR}
 cd ${COMPOSE_DIR}
 /usr/local/bin/docker-compose up -d
 ```
----
