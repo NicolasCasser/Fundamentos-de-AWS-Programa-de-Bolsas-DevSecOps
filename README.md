@@ -8,8 +8,7 @@ O objetivo é implantar o WordPress de forma escalável e tolerante a falhas, ut
 
 A arquitetura final distribui a aplicação em múltiplas instâncias EC2, gerenciadas por um Auto Scaling Group e com o tráfego balanceado por um Application Load Balancer. O armazenamento de arquivos é centralizado no Amazon EFS, e os dados são gerenciados por um banco de dados relacional Amazon RDS em modo Multi-AZ.
 
-*(Adicione aqui o print screen do diagrama da arquitetura)*
-`![Diagrama da Arquitetura](caminho/para/sua/imagem.png)`
+![Diagrama da Arquitetura](imagens/Diagrama-WordPress.png)
 
 ---
 
