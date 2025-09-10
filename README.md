@@ -10,7 +10,7 @@ A arquitetura final distribui a aplicação em múltiplas instâncias EC2, geren
 
 ---
 
-## Guia de Implementação Passo a Passo
+## Etapas de Configuração
 
 Esta seção descreve em detalhes o processo de construção do ambiente.
 
@@ -24,7 +24,7 @@ A rede foi configurada com uma VPC personalizada contendo sub-redes públicas e 
     * Foram criadas duas sub-redes privadas (`10.0.3.0/24`, `10.0.4.0/24`) para recursos protegidos.
 3.  **Gateways e Rotas:**
     * Um **Internet Gateway** (`wordpress-igw`) foi criado e atrelado a uma tabela de rotas (`wordpress-public-rt`) para as sub-redes públicas.
-    * Um **NAT Gateway** (`wordpress-nat-gateway`) foi posicionado em uma sub-rede pública, com sua rota configurada na tabela de rotas privada (`wordpress-private-rt`).
+    * Um **NAT Gateway** (`wordpress-ngw`) foi posicionado em uma sub-rede pública, com sua rota configurada na tabela de rotas privada (`wordpress-private-rt`).
 
 ### Fase 2: Configuração da Segurança (Security Groups)
 
@@ -54,34 +54,33 @@ Foram criados grupos de segurança específicos para controlar o tráfego entre 
     * **AMI:** Foi utilizada a **Amazon Linux 2023**.
     * **Tipo de instância:** `t2.micro`.
     * **Grupo de segurança:** `wordpress-ec2-sg`.
-    * **Dados do usuário (User Data):** O modelo foi configurado com o script `user-data` final, que prepara a instância e clona o repositório Git com a configuração da aplicação.
+    * **Dados do usuário (User Data):** O modelo foi configurado com script `user-data`, que prepara a instância e clona o repositório Git com a configuração da aplicação.
 
 2.  **Application Load Balancer (ALB):**
-    * Foi criado um **Grupo de Destino** (`wordpress-targets`) para `Instâncias` na `wordpress-vpc` (protocolo `HTTP:80`).
-    * Foi provisionado um **Application Load Balancer** (`wordpress-alb`), `Voltado para a Internet`, mapeado para as **sub-redes públicas** e usando o Security Group `wordpress-alb-sg`. A regra principal do seu *listener* na porta 80 foi configurada para encaminhar todo o tráfego para o grupo de destino `wordpress-targets`.
+    * Foi criado um **Grupo de Destino** (`wordpress-tg`) para `Instâncias` na `wordpress-vpc` (protocolo `HTTP:80`).
+    * Foi provisionado um **Application Load Balancer** (`wordpress-alb`), `Voltado para a Internet`, mapeado para as **sub-redes públicas** e usando o Security Group `wordpress-alb-sg`. A regra principal do seu *listener* na porta 80 foi configurada para encaminhar todo o tráfego para o grupo de destino `wordpress-tg`.
 
 3.  **Auto Scaling Group (ASG):**
-    * Foi criado um grupo com o nome `wordpress-asg`, associado ao `wordpress-lt`.
+    * Foi criado um ASG com o nome `wordpress-asg`, associado ao `wordpress-lt`.
     * O ASG foi configurado para lançar instâncias nas duas **sub-redes PRIVADAS**, garantindo a segurança.
-    * O grupo foi anexado ao `wordpress-targets` do ALB, com as verificações de integridade do ELB habilitadas.
-    * Foi definida uma **"Política de dimensionamento com monitoramento do objetivo"** para manter a `Utilização média da CPU` em `50%`, com a capacidade do grupo variando entre 1 e 4 instâncias.
+    * O grupo foi anexado ao `wordpress-tg` do ALB, com as verificações de integridade do ELB habilitadas.
+    * Foi definida uma **"Política de dimensionamento com monitoramento do objetivo"** para manter a `Utilização média da CPU` em `50%`, com a capacidade do grupo variando entre 2 e 3 instâncias.
 
 ---
-### Script `user-data` Final (Método com Git)
+### Script `user-data` 
 
-Este é o script final utilizado no Launch Template. Ele prepara a infraestrutura da instância e busca a configuração da aplicação (`docker-compose.yml`) do repositório Git.
+Este é o script utilizado no Launch Template. Ele prepara a infraestrutura da instância e busca a configuração da aplicação (`docker-compose.yml`) do repositório Git.
 
 ```bash
 #!/bin/bash
-# --- CONFIGURAÇÃO DE VARIÁVEIS ---
-EFS_ID="seu-id-do-efs"
-RDS_ENDPOINT="seu-endpoint-do-rds"
+EFS_ID="id-do-efs"
+RDS_ENDPOINT="endpoint-do-rds"
 DB_NAME="wordpress"
 DB_USER="admin"
-DB_PASSWORD="SUA-SENHA-DO-RDS"
-GIT_REPO_URL="[https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)"
+DB_PASSWORD="SENHA-DO-RDS"
+GIT_REPO_URL="[https://github.com/usuario/repositorio.git](https://github.com/usuario/repositorio.git)"
 
-# --- PREPARAÇÃO DA INSTÂNCIA ---
+#Preparação da Instância
 yum update -y
 yum install -y docker amazon-efs-utils git
 
@@ -89,20 +88,20 @@ systemctl start docker
 systemctl enable docker
 usermod -a -G docker ec2-user
 
-# --- MONTAGEM DO EFS ---
+#Montagem do EFS
 EFS_MOUNT_POINT="/mnt/efs-wordpress"
 mkdir -p ${EFS_MOUNT_POINT}
 echo "${EFS_ID}:/ ${EFS_MOUNT_POINT} efs _netdev,tls 0 0" >> /etc/fstab
 mount -a -t efs
 chmod 777 ${EFS_MOUNT_POINT}
 
-# --- DEPLOY DA APLICAÇÃO VIA GIT E DOCKER COMPOSE ---
+#Deploy da Aplicação via Docker Compose
 cd /home/ec2-user
 git clone ${GIT_REPO_URL}
 REPO_DIR=$(basename ${GIT_REPO_URL} .git)
 cd ${REPO_DIR}
 
-# Exporta as variáveis de ambiente para o Docker Compose
+#Exporta as variáveis de ambiente para o Docker Compose
 export RDS_ENDPOINT
 export DB_USER
 export DB_PASSWORD
@@ -114,18 +113,3 @@ curl -L "[https://github.com/docker/compose/releases/latest/download/docker-comp
 chmod +x /usr/local/bin/docker-compose
 /usr/local/bin/docker-compose up -d
 ```
----
-
-## Análise e Descobertas do Processo
-
-O processo de implementação revelou desafios técnicos importantes, principalmente relacionados às limitações de recursos da instância `t2.micro`.
-
-1.  **Desafio de Recursos:** A combinação do sistema operacional, Docker e a aplicação WordPress (com servidor Apache) consome uma quantidade de memória e CPU que leva a instância `t2.micro` ao seu limite.
-2.  **Conflito de Permissões com EFS:** Foi identificado um complexo problema de permissões entre o contêiner Docker e o volume de rede EFS (NFS), que impedia o WordPress de salvar arquivos de mídia. A solução robusta foi aplicar permissões abertas (`chmod 777`) no ponto de montagem do EFS.
-3.  **Falha de Configuração do `user-data`:** Os erros de "502 Bad Gateway" na arquitetura final foram rastreados a uma falha na interpretação do script `user-data`. A solução foi garantir a integridade do script e armazená-lo de forma consistente em um Launch Template.
-
-## Status do Projeto
-
-* **CONCLUÍDO E FUNCIONAL:** A arquitetura de alta disponibilidade (VPC, ALB, ASG, RDS, EFS) foi totalmente implantada e validada.
-* **VALIDADO:** O site (front-end) é servido corretamente através do Load Balancer e as instâncias são resilientes a falhas.
-* **DESAFIO CONHECIDO:** O painel de administração (`/wp-admin`) apresenta instabilidade devido às limitações de recursos da instância `t2.micro`.
