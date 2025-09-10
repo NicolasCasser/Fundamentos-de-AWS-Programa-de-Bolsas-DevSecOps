@@ -14,7 +14,7 @@ A arquitetura final distribui a aplicação em múltiplas instâncias EC2, geren
 
 Esta seção detalha a função e a configuração de cada componente implementado no projeto.
 
-### Fase 1: Fundação de Rede (VPC)
+### Fase 1: VPC
 
 **Função:** A VPC (Virtual Private Cloud) atua como a fundação da arquitetura, criando uma rede privada e logicamente isolada na nuvem da AWS. Isso nos dá controle total sobre o ambiente de rede, permitindo projetar uma topologia segura que protege nossos recursos internos.
 
