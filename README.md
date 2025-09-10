@@ -118,3 +118,13 @@ curl -L "[https://github.com/docker/compose/releases/latest/download/docker-comp
 chmod +x /usr/local/bin/docker-compose
 /usr/local/bin/docker-compose up -d
 ```
+
+### Validação e Testes da Arquitetadura
+
+Após a implementação completa, foram realizados testes para validar os principais objetivos do projeto: alta disponibilidade e resiliência.
+
+* **Teste de Acesso e Persistência:** O acesso ao site foi feito através do Nome DNS do Application Load Balancer. Um post de exemplo com uma imagem foi criado. Em seguida, as instâncias EC2 foram recriadas do zero. O post e a imagem permaneceram intactos, confirmando que os dados foram persistidos corretamente no RDS e no EFS.
+
+* **Teste de Resiliência:** Uma das duas instâncias EC2 ativas foi terminada manualmente para simular uma falha. O site continuou funcionando sem interrupção, com o tráfego sendo automaticamente redirecionado para a instância saudável restante. Após alguns minutos, o Auto Scaling Group lançou uma nova instância para substituir a que falhou, restaurando a capacidade total. Este teste validou a alta disponibilidade e a capacidade de auto-reparo da arquitetura.
+
+O resultado dos testes confirmou que a aplicação está funcionando corretamente e que a arquitetura cumpre os requisitos de um ambiente escalável e tolerante a falhas.
