@@ -1,22 +1,22 @@
 # Projeto: WordPress em Alta Disponibilidade 
 
-Este repositório documenta a implementação de uma arquitetura de alta disponibilidade para a plataforma WordPress na nuvem AWS. O projeto foi desenvolvido como parte do programa de estudos "Fundamentos de AWS - DevSecOps".
+Este repositório documenta a implementação de uma arquitetura de alta disponibilidade para a plataforma WordPress na nuvem AWS. 
 
 O objetivo é implantar o WordPress de forma escalável e tolerante a falhas, utilizando os principais serviços gerenciados da AWS para garantir desempenho e disponibilidade, simulando um ambiente de produção real.
 
 ## Arquitetura Proposta
 
-A arquitetura final distribui a aplicação em múltiplas instâncias EC2, gerenciadas por um Auto Scaling Group e com o tráfego balanceado por um Application Load Balancer. O armazenamento de arquivos é centralizado no Amazon EFS, e os dados são gerenciados por um banco de dados relacional Amazon RDS em modo Multi-AZ.
+A arquitetura final distribui a aplicação em múltiplas instâncias EC2, gerenciadas por um Auto Scaling Group e com o tráfego balanceado por um Application Load Balancer. O armazenamento de arquivos é centralizado no Amazon EFS, e os dados são gerenciados por um banco de dados relacional Amazon RDS.
 
 ![Diagrama da Arquitetura](imagens/Diagrama-WordPress.png)
 
 ---
 
-## Etapas de Configuração Detalhadas
+## Etapas de Configuração
 
 Esta seção serve como um guia passo a passo para reconstruir o ambiente completo.
 
-### Fase 1: Configuração da Fundação de Rede (VPC)
+### Fase 1: Configuração da Rede (VPC)
 A rede foi configurada com uma VPC personalizada contendo sub-redes públicas e privadas em duas Zonas de Disponibilidade para garantir a resiliência.
 
 1.  **VPC:** Criada com o nome `wordpress-vpc` e CIDR `10.0.0.0/16`.
@@ -42,7 +42,7 @@ Foram criados grupos de segurança específicos para controlar o tráfego entre 
 
 ### Fase 4: Implementação da Alta Disponibilidade (EC2, ALB, ASG)
 
-1.  **Launch Template:** Foi criado um "molde" chamado `wordpress-final-template` baseado na AMI **Amazon Linux 2** e no tipo de instância **t2.micro**. Este molde inclui o script `user-data` abaixo, que provou ser funcional.
+1.  **Launch Template:** Foi criado um "molde" chamado `wordpress-lt` baseado na AMI **Amazon Linux 2023** e no tipo de instância **t2.micro**. Este molde inclui o script `user-data` abaixo, que provou ser funcional.
 
     ```bash
     #!/bin/bash
@@ -114,9 +114,3 @@ O processo de implementação revelou desafios técnicos importantes, principalm
 * **IMPLANTADO:** Arquitetura de alta disponibilidade (VPC, ALB, ASG, RDS, EFS) está no ar e funcional.
 * **VALIDADO:** O site (front-end) é servido corretamente através do Load Balancer e as instâncias são gerenciadas pelo Auto Scaling.
 * **PROBLEMA ATUAL:** O acesso ao painel de administração (`/wp-admin`) resulta em **timeout** devido ao esgotamento de recursos das instâncias `t2.micro`.
-
-## Próximos Passos
-
-O próximo passo é resolver o problema de performance do painel de administração. A solução proposta é:
-1.  Atualizar o arquivo `docker-compose.yml` no repositório Git para usar uma stack de software mais leve: **Nginx + WordPress-FPM-Alpine**.
-2.  Forçar o Auto Scaling Group a rec
