@@ -16,7 +16,7 @@ Esta seção detalha a função e a configuração de cada componente implementa
 
 ### Fase 1: Fundação de Rede (VPC)
 
-**Função:** A VPC (Virtual Private Cloud) atua como a fundação da nossa arquitetura, criando uma rede privada e logicamente isolada na nuvem da AWS. Isso nos dá controle total sobre o ambiente de rede, permitindo-nos projetar uma topologia segura que protege nossos recursos internos.
+**Função:** A VPC (Virtual Private Cloud) atua como a fundação da arquitetura, criando uma rede privada e logicamente isolada na nuvem da AWS. Isso nos dá controle total sobre o ambiente de rede, permitindo projetar uma topologia segura que protege nossos recursos internos.
 
 1.  **Topologia da Rede:** A VPC (`wordpress-vpc`) foi projetada com um espaço de IPs (`10.0.0.0/16`) e segmentada em sub-redes distribuídas em duas Zonas de Disponibilidade para alta resiliência:
     * **Sub-redes Públicas:** Duas sub-redes (`10.0.1.0/24`, `10.0.2.0/24`) foram designadas para recursos com acesso à internet, como o Load Balancer. A conectividade é provida por um **Internet Gateway**.
@@ -118,6 +118,3 @@ curl -L "[https://github.com/docker/compose/releases/latest/download/docker-comp
 chmod +x /usr/local/bin/docker-compose
 /usr/local/bin/docker-compose up -d
 ```
-
-* **CONCLUÍDO E FUNCIONAL:** A arquitetura de alta disponibilidade foi totalmente implantada e validada.
-* **VALIDADO:** O site é servido corretamente através do Load Balancer e o sistema se mostrou resiliente a falhas de instâncias.
